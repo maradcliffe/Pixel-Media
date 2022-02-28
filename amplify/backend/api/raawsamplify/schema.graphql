@@ -1,0 +1,51 @@
+type Post
+  @model
+  # @searchable
+  @auth(
+    rules: [
+      { allow: owner }
+      { allow: owner, ownerField: "editors", operations: [update] }
+      { allow: public, operations: [read] }
+      { allow: groups, groups: ["admin"] }
+    ]
+  ) {
+  id: ID!
+  title: String!
+  content: String
+  image: Media @connection
+  comments: [Comment] @connection(keyName: "byPost", fields: ["id"])
+  files: [S3Object!]
+}
+
+type Comment
+  @model
+  @auth(
+    rules: [
+      { allow: public, operations: [read] }
+      { allow: groups, groups: ["admin", "editor"] }
+    ]
+  )
+  @key(name: "byPost", fields: ["postId"], queryField: "commentsByPost") {
+  id: ID!
+  content: String
+  postId: ID!
+}
+
+type Media
+  @model
+  # @searchable
+  @auth(
+    rules: [{ allow: owner }, { allow: groups, groups: ["admin", "editor"] }]
+  ) {
+  id: ID!
+  name: String
+  attachment: S3Object!
+}
+
+# S3Object minimum type
+type S3Object {
+  key: String!
+  identityId: String
+  level: String
+  type: String
+}
